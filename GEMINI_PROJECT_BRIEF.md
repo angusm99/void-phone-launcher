@@ -11,8 +11,8 @@ Angus (Cape Town, South Africa). Non-developer building an Android launcher app 
 - Package: `com.clearphone.launcher`
 - Language: Kotlin + Jetpack Compose
 - IDE: Android Studio
-- Project location on Angus's machine: `C:\Users\User\AndroidStudioProjects\SimplePhoneLauncher`
-- A separate working folder (`C:\Users\AngusM99\CLAUDE\APP BUILD-SIMPLE PHONE LAUNCER\`) is used to store the source files that are edited externally and then copied into Android Studio manually.
+- Project location on Angus's machine: `C:\Users\User\AndroidStudioProjects\SimplePhoneLauncher` — this is the single master: the buildable Android Studio project, the git repo, and the GitHub source all in one. (Edit here, build here, commit here; no separate working-folder copies.)
+- GitHub: https://github.com/angusm99/void-phone-launcher
 
 The design aesthetic is: **pure black AMOLED background, transparent circles with lowercase app names inside, no icons by default, optional CRT terminal mode with phosphor effects.**
 

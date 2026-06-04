@@ -10,13 +10,18 @@
 
 ## Folders on This PC
 
+> **One master.** The Android Studio project **is** the git repo and the GitHub master.
+> There are no separate "working folder" copies anymore — edit here, build here, commit here.
+
 | What | Path |
 |------|------|
-| Working folder (source + docs + git) | `C:\Users\User\CLAUDE\VOID_UI_LAUNCHER_MASTER\` |
-| Android Studio project | `C:\Users\User\AndroidStudioProjects\SimplePhoneLauncher\` |
-| Built debug APK | `C:\Users\User\AndroidStudioProjects\SimplePhoneLauncher\app\build\outputs\apk\debug\app-debug.apk` |
+| **Master (project + repo + docs)** | `C:\Users\User\AndroidStudioProjects\SimplePhoneLauncher\` |
+| Built debug APK | `…\SimplePhoneLauncher\app\build\outputs\apk\debug\app-debug.apk` |
+| Latest test APK (copy) | `C:\Users\User\Desktop\void-phone-v1.0.1-debug.apk` |
 | Obsidian note | `C:\Obsidian Home-MASTER\Obsidian - Home\VOID UI-Phone Launcher App.md` |
-| GitHub | https://github.com/angusm99/void-phone-launcher |
+| GitHub (full buildable project) | https://github.com/angusm99/void-phone-launcher |
+
+Source lives under `app/src/main/java/com/clearphone/launcher/`; resources under `app/src/main/res/`.
 
 ---
 
@@ -32,19 +37,19 @@
 
 ---
 
-## Working Folder → Android Studio Sync
+## Workflow (single master — no copying between folders)
 
-Copy these files **into** the Android Studio project before building:
+1. Edit code/docs directly in `AndroidStudioProjects\SimplePhoneLauncher`.
+2. Build the APK (see below).
+3. Commit + push:
+   ```powershell
+   cd "C:\Users\User\AndroidStudioProjects\SimplePhoneLauncher"
+   git add -A; git commit -m "your message"; git push
+   ```
 
-```
-VOID_UI_LAUNCHER_MASTER\MainActivity.kt        →  app/src/main/java/com/clearphone/launcher/
-VOID_UI_LAUNCHER_MASTER\FavouritesStore.kt     →  app/src/main/java/com/clearphone/launcher/
-VOID_UI_LAUNCHER_MASTER\AppIconImage.kt        →  app/src/main/java/com/clearphone/launcher/
-VOID_UI_LAUNCHER_MASTER\AndroidManifest.xml    →  app/src/main/
-VOID_UI_LAUNCHER_MASTER\build.gradle.kts       →  app/
-```
-
-After editing in Android Studio, copy `.kt` files back and commit to GitHub.
+> History note (2026-06-04): previously the repo held only loose source files in a
+> separate `VOID_UI_LAUNCHER_MASTER` folder, kept in sync by hand. That caused drift.
+> The repo is now the **complete buildable project**; the loose-files copies were deleted.
 
 ---
 
@@ -107,7 +112,7 @@ APK lands at `app\build\outputs\apk\debug\app-debug.apk` (~11.6 MB, debug-signed
 6. Build signed release AAB — **Build → Generate Signed Bundle**
 7. Upload to Play Console and submit (3–7 day review)
 
-> Note: the GitHub repo / working folder holds the loose source files + docs, not the full Gradle project. The buildable project is the Android Studio one. The `app_name` fix lives in `strings.xml` inside that project (not mirrored to the working folder).
+> Note (2026-06-04): the GitHub repo now **is** the full buildable Gradle project — clone it and build directly. The old loose-files `VOID_UI_LAUNCHER_MASTER` copies were retired.
 
 ---
 

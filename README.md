@@ -11,8 +11,8 @@
 - **Package:** `com.clearphone.launcher`
 - **Version:** core_v1 (free tier)
 - **Platform:** Android, Jetpack Compose, single-activity architecture
-- **Project path:** `C:\Users\User\AndroidStudioProjects\SimplePhoneLauncher`
-- **Working files:** `C:\Users\AngusM99\CLAUDE\APP BUILD-SIMPLE PHONE LAUNCER\`
+- **Project path (single master = repo):** `C:\Users\User\AndroidStudioProjects\SimplePhoneLauncher`
+- **GitHub:** https://github.com/angusm99/void-phone-launcher (full buildable project)
 
 ---
 
