@@ -132,13 +132,17 @@ Download from [fonts.google.com/specimen/Inter](https://fonts.google.com/specime
 
 ---
 
-## Premium Roadmap
+## Icon Pack Support — BUILT (v1.1.0)
 
-### Icon Pack Support
-- Query installed packs via `themeit.app.launcher.THEME` / `org.adw.launcher.THEMES` intent
-- Parse `appfilter.xml` to map packages → custom drawables
-- Natural fit for VOID_UI icon pack (separate APK, also a standalone revenue stream)
-- Stock icons via `PackageManager.loadIcon()` always used as fallback
+Standard ADW-style icon packs are supported (see `IconPackManager.kt`):
+- Detects installed packs via the `org.adw.launcher.THEMES` / GO / Nova theme intents
+- Parses the pack's `assets/appfilter.xml` (or `res/xml/appfilter`) → maps each app's launcher component to a pack drawable
+- Exact component match first, then package-name fallback, then the app's stock icon
+- Pick a pack from the `⋮` menu → **icon pack**; choice persists (`icon_pack` DataStore key)
+- Selecting a pack auto-enables icon display; "stock icons" reverts
+- Natural fit for the VOID UI icon pack (`com.voidui.iconpack`)
+
+## Premium Roadmap
 
 ### Focus Mode / Work Hours *(priority feature)*
 Time-based launcher lockdown. Three profiles:

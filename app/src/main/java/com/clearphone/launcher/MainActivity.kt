@@ -156,7 +156,8 @@ private val TextHint = Color(0xFF475569)
 data class AppItem(
     val name: String,
     val packageName: String,
-    val icon: Drawable
+    val icon: Drawable,
+    val component: String = ""   // "ComponentInfo{pkg/activity}" — for icon-pack matching
 )
 
 enum class Screen { Home, AllApps, Help }
@@ -190,6 +191,10 @@ class MainActivity : ComponentActivity() {
     private var iconSize     = mutableStateOf(IconSize.MEDIUM)
     private var gridColumns  = mutableStateOf(GridColumns.TWO)
     private var terminalHeaderName = mutableStateOf("void")
+    private lateinit var iconPackManager: IconPackManager
+    private var iconPackPackage = mutableStateOf("")              // "" = stock icons
+    private var loadedIconPack  = mutableStateOf<IconPack?>(null)
+    private var availableIconPacks: List<IconPackInfo> = emptyList()
 
     private val defaultPackages = listOf(
         "com.google.android.dialer",
@@ -204,7 +209,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         store = FavouritesStore(this)
+        iconPackManager = IconPackManager(this)
         installedApps = getInstalledApps()
+        availableIconPacks = iconPackManager.getAvailableIconPacks()
         runBlocking {
             showLabels.value   = store.loadShowLabels()
             iconShape.value    = store.loadIconShape()
@@ -214,6 +221,7 @@ class MainActivity : ComponentActivity() {
             iconSize.value     = store.loadIconSize()
             gridColumns.value  = store.loadGridColumns()
             terminalHeaderName.value = store.loadTerminalHeader()
+            iconPackPackage.value = store.loadIconPack()
             if (store.hasSavedFavourites()) {
                 val savedPackages = store.loadFavourites()
                 val resolved = savedPackages.mapNotNull { pkg ->
@@ -226,6 +234,13 @@ class MainActivity : ComponentActivity() {
                 }
                 favourites.addAll(resolved)
                 store.saveFavourites(favourites.map { it.packageName })
+            }
+        }
+
+        // Load the saved icon pack off the main thread (parsing appfilter can be slow)
+        if (iconPackPackage.value.isNotEmpty()) {
+            CoroutineScope(Dispatchers.IO).launch {
+                loadedIconPack.value = iconPackManager.load(iconPackPackage.value)
             }
         }
 
@@ -248,6 +263,9 @@ class MainActivity : ComponentActivity() {
                     color = NearBlack
                 ) {
                     var currentScreen by remember { mutableStateOf(Screen.Home) }
+                    val iconFor: (AppItem) -> Drawable = { app ->
+                        loadedIconPack.value?.getIcon(app) ?: app.icon
+                    }
                     when (currentScreen) {
                         Screen.Home -> HomeScreen(
                             favourites        = favourites,
@@ -259,6 +277,9 @@ class MainActivity : ComponentActivity() {
                             iconSize          = iconSize.value,
                             gridColumns       = gridColumns.value,
                             terminalHeaderName = terminalHeaderName.value,
+                            iconFor           = iconFor,
+                            iconPacks         = availableIconPacks,
+                            currentIconPack   = iconPackPackage.value,
                             onAppClick        = { app -> launchApp(app.packageName) },
                             onOpenAppsClick   = { currentScreen = Screen.AllApps },
                             onRemoveFavourite = { app -> removeFavourite(app) },
@@ -270,6 +291,7 @@ class MainActivity : ComponentActivity() {
                             onCycleIconSize   = { cycleIconSize() },
                             onCycleColumns    = { cycleColumns() },
                             onUpdateTerminalHeader = { name -> updateTerminalHeader(name) },
+                            onSelectIconPack  = { pkg -> selectIconPack(pkg) },
                             onHelpClick       = { currentScreen = Screen.Help },
                             onReturnToSystemLauncher = { returnToSystemLauncher() },
                             onSetAsDefault    = { setAsDefaultLauncher() }
@@ -279,6 +301,7 @@ class MainActivity : ComponentActivity() {
                             favourites     = favourites,
                             iconShape      = iconShape.value,
                             accent         = accent,
+                            iconFor        = iconFor,
                             onAppClick     = { app -> launchApp(app.packageName) },
                             onAddFavourite = { app -> addFavourite(app) },
                             onBack         = { currentScreen = Screen.Home }
@@ -309,10 +332,13 @@ class MainActivity : ComponentActivity() {
         return packageManager
             .queryIntentActivities(intent, 0)
             .map { resolveInfo ->
+                val pkg = resolveInfo.activityInfo.packageName
+                val activity = resolveInfo.activityInfo.name
                 AppItem(
                     name        = resolveInfo.loadLabel(packageManager).toString(),
-                    packageName = resolveInfo.activityInfo.packageName,
-                    icon        = resolveInfo.loadIcon(packageManager)
+                    packageName = pkg,
+                    icon        = resolveInfo.loadIcon(packageManager),
+                    component   = "ComponentInfo{$pkg/$activity}"
                 )
             }
             .filter { it.packageName != packageName }
@@ -402,6 +428,20 @@ class MainActivity : ComponentActivity() {
         CoroutineScope(Dispatchers.IO).launch { store.saveTerminalHeader(terminalHeaderName.value) }
     }
 
+    private fun selectIconPack(pkg: String) {
+        iconPackPackage.value = pkg
+        // A pack only shows when icons are visible — turn them on so the user sees the effect.
+        if (pkg.isNotEmpty() && !showIcons.value) {
+            showIcons.value = true
+            CoroutineScope(Dispatchers.IO).launch { store.saveShowIcons(true) }
+        }
+        if (pkg.isEmpty()) loadedIconPack.value = null
+        CoroutineScope(Dispatchers.IO).launch {
+            store.saveIconPack(pkg)
+            if (pkg.isNotEmpty()) loadedIconPack.value = iconPackManager.load(pkg)
+        }
+    }
+
     fun setAsDefaultLauncher() {
         val intent = Intent(Settings.ACTION_HOME_SETTINGS)
         startActivity(intent)
@@ -423,6 +463,9 @@ fun HomeScreen(
     iconSize: IconSize,
     gridColumns: GridColumns,
     terminalHeaderName: String,
+    iconFor: (AppItem) -> Drawable,
+    iconPacks: List<IconPackInfo>,
+    currentIconPack: String,
     onAppClick: (AppItem) -> Unit,
     onOpenAppsClick: () -> Unit,
     onRemoveFavourite: (AppItem) -> Unit,
@@ -434,6 +477,7 @@ fun HomeScreen(
     onCycleIconSize: () -> Unit,
     onCycleColumns: () -> Unit,
     onUpdateTerminalHeader: (String) -> Unit,
+    onSelectIconPack: (String) -> Unit,
     onHelpClick: () -> Unit,
     onReturnToSystemLauncher: () -> Unit,
     onSetAsDefault: () -> Unit
@@ -897,6 +941,7 @@ fun HomeScreen(
                                         iconSize     = iconSize,
                                         gridColumns  = gridColumns,
                                         terminalHeaderName = terminalHeaderName,
+                                        iconFor      = iconFor,
                                         onClick      = { onAppClick(app) },
                                         onLongClick  = { appToDelete = app }
                                     )
@@ -927,6 +972,7 @@ fun HomeScreen(
                                         iconSize     = iconSize,
                                         gridColumns  = gridColumns,
                                         terminalHeaderName = terminalHeaderName,
+                                        iconFor      = iconFor,
                                         onClick      = { onAppClick(app) },
                                         onLongClick  = { appToDelete = app }
                                     )
@@ -967,6 +1013,52 @@ fun HomeScreen(
 
             // Bottom bar — 5 controls + three-dot menu, sits above system nav bar
             var menuExpanded by remember { mutableStateOf(false) }
+            var showIconPackDialog by remember { mutableStateOf(false) }
+
+            if (showIconPackDialog) {
+                AlertDialog(
+                    onDismissRequest = { showIconPackDialog = false },
+                    containerColor = CardDark,
+                    titleContentColor = accent.light,
+                    textContentColor = accent.dim,
+                    title = { Text("icon pack", fontSize = 18.sp) },
+                    text = {
+                        Column {
+                            val options = listOf(IconPackInfo("", "stock icons")) + iconPacks
+                            options.forEach { pack ->
+                                val selected = pack.packageName == currentIconPack
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            onSelectIconPack(pack.packageName)
+                                            showIconPackDialog = false
+                                        }
+                                        .padding(vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = if (selected) "●  " else "○  ",
+                                        color = if (selected) accent.light else TextHint,
+                                        fontSize = 15.sp
+                                    )
+                                    Text(
+                                        text = pack.label.lowercase(),
+                                        color = if (selected) accent.light else accent.bright,
+                                        fontSize = 15.sp,
+                                        fontFamily = if (terminalMode) FontFamily.Monospace else FontFamily.Default
+                                    )
+                                }
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { showIconPackDialog = false }) {
+                            Text("close", color = accent.bright)
+                        }
+                    }
+                )
+            }
             Row(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -1066,6 +1158,12 @@ fun HomeScreen(
                             text = { Text(if (showLabels) "hide labels" else "show labels", color = accent.bright, fontFamily = if (terminalMode) FontFamily.Monospace else FontFamily.Default) },
                             onClick = { menuExpanded = false; onToggleLabels() }
                         )
+                        if (iconPacks.isNotEmpty()) {
+                            androidx.compose.material3.DropdownMenuItem(
+                                text = { Text("icon pack", color = accent.bright, fontFamily = if (terminalMode) FontFamily.Monospace else FontFamily.Default) },
+                                onClick = { menuExpanded = false; showIconPackDialog = true }
+                            )
+                        }
                         androidx.compose.material3.DropdownMenuItem(
                             text = { Text("help", color = accent.bright, fontFamily = if (terminalMode) FontFamily.Monospace else FontFamily.Default) },
                             onClick = { menuExpanded = false; onHelpClick() }
@@ -1190,6 +1288,7 @@ private fun HomeIconTile(
     iconSize: IconSize = IconSize.MEDIUM,
     gridColumns: GridColumns = GridColumns.TWO,
     terminalHeaderName: String = "void",
+    iconFor: (AppItem) -> Drawable = { it.icon },
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
@@ -1252,10 +1351,10 @@ private fun HomeIconTile(
             contentAlignment = Alignment.Center
         ) {
             if (showIcons) {
-                // Show actual app icon inside the circle
+                // Show actual app icon inside the circle (icon-pack drawable if a pack is active)
                 val iconPadding = (circleSize.value * 0.22f).dp
                 AppIconImage(
-                    drawable = app.icon,
+                    drawable = iconFor(app),
                     sizeDp = circleSize - iconPadding * 2,
                     shape = iconShape
                 )
@@ -1301,6 +1400,7 @@ fun AllAppsScreen(
     favourites: List<AppItem>,
     iconShape: IconShape,
     accent: AccentTheme,
+    iconFor: (AppItem) -> Drawable = { it.icon },
     onAppClick: (AppItem) -> Unit,
     onAddFavourite: (AppItem) -> Unit,
     onBack: () -> Unit
@@ -1357,6 +1457,7 @@ fun AllAppsScreen(
                     isFavourite = isFavourite,
                     iconShape   = iconShape,
                     accent      = accent,
+                    iconFor     = iconFor,
                     onClick     = { onAppClick(app) },
                     onLongClick = {
                         if (!isFavourite) {
@@ -1391,6 +1492,7 @@ private fun AppListRow(
     isFavourite: Boolean,
     iconShape: IconShape,
     accent: AccentTheme,
+    iconFor: (AppItem) -> Drawable = { it.icon },
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
@@ -1405,7 +1507,7 @@ private fun AppListRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         AppIconImage(
-            drawable = app.icon,
+            drawable = iconFor(app),
             sizeDp   = 44.dp,
             shape    = iconShape
         )
@@ -1503,6 +1605,12 @@ fun HelpScreen(
             icon = ">_",
             title = "terminal mode",
             description = "Toggles the CRT terminal aesthetic — phosphor tint, scanlines, static bursts, and radiation warnings.",
+            accent = accent
+        )
+        HelpItem(
+            icon = "▦",
+            title = "icon pack",
+            description = "If you have an icon pack installed (like VOID UI), open the ⋮ menu and tap \"icon pack\" to apply it. Picking a pack turns on icon display automatically; choose \"stock icons\" to revert.",
             accent = accent
         )
         HelpItem(

@@ -20,6 +20,7 @@ class FavouritesStore(private val context: Context) {
         private val ICON_SIZE_KEY      = stringPreferencesKey("icon_size")
         private val GRID_COLUMNS_KEY   = stringPreferencesKey("grid_columns")
         private val TERMINAL_HEADER_KEY = stringPreferencesKey("terminal_header")
+        private val ICON_PACK_KEY      = stringPreferencesKey("icon_pack")
     }
 
     suspend fun saveFavourites(packageNames: List<String>) {
@@ -129,6 +130,18 @@ class FavouritesStore(private val context: Context) {
     suspend fun loadTerminalHeader(): String {
         val prefs = context.dataStore.data.first()
         return prefs[TERMINAL_HEADER_KEY] ?: "void"
+    }
+
+    // Icon pack — empty string means "stock icons" (no pack)
+    suspend fun saveIconPack(packageName: String) {
+        context.dataStore.edit { prefs ->
+            prefs[ICON_PACK_KEY] = packageName
+        }
+    }
+
+    suspend fun loadIconPack(): String {
+        val prefs = context.dataStore.data.first()
+        return prefs[ICON_PACK_KEY] ?: ""
     }
 }
 

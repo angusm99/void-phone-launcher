@@ -1,7 +1,7 @@
 # VOID UI Phone Launcher — Codex
 
 **Package:** `com.clearphone.launcher`  
-**Version:** `1.0.1` (versionCode 2) — single source of truth in `build.gradle.kts`, read via `BuildConfig`  
+**Version:** `1.1.0` (versionCode 3) — single source of truth in `build.gradle.kts`, read via `BuildConfig`  
 **Stack:** Kotlin + Jetpack Compose, single activity, no Navigation Compose  
 **Build status:** ✅ Debug APK builds clean (Gradle, JBR 21, build-tools 36) — last built 2026-06-04  
 **Last updated:** 2026-06-04
@@ -32,6 +32,7 @@ Source lives under `app/src/main/java/com/clearphone/launcher/`; resources under
 | `MainActivity.kt` | All UI — HomeScreen, AllAppsScreen, HelpScreen, terminal effects, state |
 | `FavouritesStore.kt` | DataStore persistence + all enums |
 | `AppIconImage.kt` | Renders app icons with clip shape (incl. DiamondShape) |
+| `IconPackManager.kt` | Detects ADW icon packs, parses `appfilter.xml`, resolves app→pack drawable (stock fallback) |
 | `AndroidManifest.xml` | Launcher registration, `<queries>` block, `singleTask` |
 | `build.gradle.kts` | App module — `compileSdk 36`, `minSdk 26` |
 
@@ -81,6 +82,7 @@ APK lands at `app\build\outputs\apk\debug\app-debug.apk` (~11.6 MB, debug-signed
 |---------|--------|
 | Home, All Apps, Help screens | ✅ Done |
 | Terminal mode (full CRT effects) | ✅ Done |
+| **Icon pack support (ADW appfilter.xml)** | ✅ Done v1.1.0 — ⋮ menu → "icon pack" |
 | Custom terminal header (long-press to rename) | ✅ Done |
 | 3 icon shapes: Circle / Rounded Square / Diamond | ✅ Done |
 | 4 colour themes × 6 shades | ✅ Done |
