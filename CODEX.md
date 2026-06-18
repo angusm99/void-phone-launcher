@@ -1,7 +1,7 @@
 # VOID UI Phone Launcher — Codex
 
 **Package:** `com.clearphone.launcher`  
-**Version:** `1.1.1` (versionCode 4) — single source of truth in `build.gradle.kts`, read via `BuildConfig`  
+**Version:** `1.1.2` (versionCode 5) — single source of truth in `build.gradle.kts`, read via `BuildConfig`  
 **Stack:** Kotlin + Jetpack Compose, single activity, no Navigation Compose  
 **Build status:** ✅ Debug APK builds clean (Gradle, JBR 21, build-tools 36) — last built 2026-06-04  
 **Last updated:** 2026-06-04
@@ -101,7 +101,7 @@ APK lands at `app\build\outputs\apk\debug\app-debug.apk` (~11.6 MB, debug-signed
 - ✅ **Version string** — no longer hardcoded; `MainActivity` reads `BuildConfig.VERSION_NAME`/`VERSION_CODE`. One source of truth: `build.gradle.kts` (`1.0.1` / code 2).
 - ✅ **App label** — `strings.xml app_name` changed from "Simple Phone Launcher" → "void phone".
 - ✅ **Stale dp comments** — `FavouritesStore.kt` IconSize comments corrected to 104dp / 148dp.
-- ✅ **Radiation warning stuck-on bug (v1.1.1)** — on devices with animations disabled (`animator_duration_scale = 0`), Compose `InfiniteTransition` snaps to its `targetValue`, so the warning (target `1f`) showed permanently. Rewritten to a real-time coroutine timer (`LaunchedEffect` + `delay` + `Animatable`) that ignores animation scale. Now correctly fires ~every 5 min for ~14s on all devices. (Other terminal effects also rely on `InfiniteTransition`; on an animations-off device they render static rather than pulsing — re-enable animations on the device for full fidelity. Not a blocker.)
+- ✅ **Radiation warning (v1.1.1 stuck-on fix → v1.1.2 brief flash)** — on devices with animations disabled (`animator_duration_scale = 0`), Compose `InfiniteTransition` snaps to its `targetValue`, so the warning (target `1f`) showed permanently. Rewritten to a real-time coroutine timer (`LaunchedEffect` + `delay` + `Animatable`) that ignores animation scale, **only runs in terminal mode**, and shows a **brief ~2s flash** every ~5 min (was 14s). (Other terminal effects also rely on `InfiniteTransition`; on an animations-off device they render static rather than pulsing — re-enable animations on the device for full fidelity. Not a blocker.)
 - ℹ️ **Fonts** — current code does NOT load custom TTFs; it uses `FontFamily.Monospace` / `FontFamily.Default`. No missing-resource risk. Custom fonts are optional future polish.
 
 ## Before Play Store Submission

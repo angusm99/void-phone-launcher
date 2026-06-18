@@ -627,23 +627,20 @@ fun HomeScreen(
     val scanCracklePos1 = 0.22f  // upper band, ~22% down the screen
     val scanCracklePos2 = 0.61f  // lower band, ~61% down the screen
 
-    // Radiation warning interrupt — driven by a REAL-TIME coroutine timer, not the
-    // animation system. On devices with "animator duration scale = 0" (animations
-    // disabled), an InfiniteTransition snaps straight to its targetValue, which left
-    // this warning stuck permanently on. delay() is unaffected by animation scale, so
-    // the cadence is reliable on every device. Fires ~every 5 min, visible ~14s.
+    // Radiation warning interrupt — ONLY in terminal mode, and only a BRIEF (~2s) flash.
+    // Driven by a REAL-TIME coroutine timer, not the animation system: on devices with
+    // "animator duration scale = 0" an InfiniteTransition snaps to its targetValue, which
+    // had left this stuck permanently on. delay() ignores animation scale, so the cadence
+    // is reliable everywhere. Fires ~every 5 min; visible ~2 seconds.
     val radWarning = remember { Animatable(0f) }
     LaunchedEffect(terminalMode) {
-        if (!terminalMode) {
-            radWarning.snapTo(0f)
-            return@LaunchedEffect
-        }
-        radWarning.snapTo(0f)
+        radWarning.snapTo(0f)                       // reset on (re)entry — hides instantly
+        if (!terminalMode) return@LaunchedEffect    // never runs outside terminal mode
         while (true) {
-            delay(300_000L)                         // 5 minutes, no warning
-            radWarning.animateTo(1f, tween(2000))   // ~2s fade in (instant if anims off)
-            delay(10_000L)                           // 10s hold — always real-time
-            radWarning.animateTo(0f, tween(2000))   // ~2s fade out
+            delay(300_000L)                         // 5 minutes between warnings
+            radWarning.animateTo(1f, tween(250))    // quick fade in
+            delay(1500L)                             // ~1.5–2s visible (real-time)
+            radWarning.animateTo(0f, tween(250))    // quick fade out
         }
     }
     val radWarningLevel = radWarning.value
