@@ -48,6 +48,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -61,6 +62,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -79,6 +81,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
@@ -624,29 +627,31 @@ fun HomeScreen(
     val scanCracklePos1 = 0.22f  // upper band, ~22% down the screen
     val scanCracklePos2 = 0.61f  // lower band, ~61% down the screen
 
-    // Radiation warning interrupt — fires once every ~300s (5 minutes)
-    val radWarning by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = keyframes {
-                durationMillis = 300000
-                0f at 0
-                0f at 240000 // 4 mins
-                1f at 242000 // 2s fade in
-                1f at 252000 // 10s hold
-                0f at 254000 // 2s fade out
-                0f at 300000
-            },
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "radWarning"
-    )
+    // Radiation warning interrupt — driven by a REAL-TIME coroutine timer, not the
+    // animation system. On devices with "animator duration scale = 0" (animations
+    // disabled), an InfiniteTransition snaps straight to its targetValue, which left
+    // this warning stuck permanently on. delay() is unaffected by animation scale, so
+    // the cadence is reliable on every device. Fires ~every 5 min, visible ~14s.
+    val radWarning = remember { Animatable(0f) }
+    LaunchedEffect(terminalMode) {
+        if (!terminalMode) {
+            radWarning.snapTo(0f)
+            return@LaunchedEffect
+        }
+        radWarning.snapTo(0f)
+        while (true) {
+            delay(300_000L)                         // 5 minutes, no warning
+            radWarning.animateTo(1f, tween(2000))   // ~2s fade in (instant if anims off)
+            delay(10_000L)                           // 10s hold — always real-time
+            radWarning.animateTo(0f, tween(2000))   // ~2s fade out
+        }
+    }
+    val radWarningLevel = radWarning.value
 
     // Derived states for the warning UI
-    val showRadWarning = terminalMode && radWarning > 0.001f
-    val homeAlphaDuringWarning = if (terminalMode) (1f - radWarning).coerceIn(0f, 1f) else 1f
-    val radWarningAlpha = if (terminalMode) radWarning else 0f
+    val showRadWarning = terminalMode && radWarningLevel > 0.001f
+    val homeAlphaDuringWarning = if (terminalMode) (1f - radWarningLevel).coerceIn(0f, 1f) else 1f
+    val radWarningAlpha = if (terminalMode) radWarningLevel else 0f
 
     // Screen dim — flicker spikes lower brightness slightly
     val crackleDim = if (terminalMode) (1f - flickerVal * 0.12f) else 1f
