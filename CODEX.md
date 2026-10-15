@@ -1,10 +1,10 @@
 # VOID UI Phone Launcher — Codex
 
 **Package:** `com.clearphone.launcher`  
-**Version:** `1.1.2` (versionCode 5) — single source of truth in `build.gradle.kts`, read via `BuildConfig`  
+**Version:** `1.1.3` (versionCode 6) — single source of truth in `build.gradle.kts`, read via `BuildConfig`  
 **Stack:** Kotlin + Jetpack Compose, single activity, no Navigation Compose  
-**Build status:** ✅ Debug APK builds clean (Gradle, JBR 21, build-tools 36) — last built 2026-06-04  
-**Last updated:** 2026-06-04
+**Build status:** ✅ Debug APK and release AAB build clean (Gradle, JBR 21, build-tools 36) — 2026-10-15. Release signing is wired; it fails at signing until the two passwords are filled in `keystore.properties`  
+**Last updated:** 2026-10-15
 
 ---
 
@@ -86,13 +86,19 @@ APK lands at `app\build\outputs\apk\debug\app-debug.apk` (~11.6 MB, debug-signed
 | Custom terminal header (long-press to rename) | ✅ Done |
 | 3 icon shapes: Circle / Rounded Square / Diamond | ✅ Done |
 | 4 colour themes × 6 shades | ✅ Done |
-| DataStore persistence (9 keys) | ✅ Done |
+| DataStore persistence (10 keys, incl. `icon_pack`) | ✅ Done |
 | App label shows "void phone" | ✅ Fixed (was "Simple Phone Launcher") |
-| Version single-sourced via BuildConfig | ✅ Done (`1.0.1`) |
+| Version single-sourced via BuildConfig | ✅ Done |
 | Debug APK builds + installs | ✅ Verified 2026-06-04 |
 | Custom fonts (Inter + JetBrains Mono) | ⛔ Not used — code uses system Monospace/Default. Optional polish only |
-| App icon (512×512 PNG) | ⏳ Not designed yet |
-| Play Store screenshots | ⏳ Not taken yet |
+| App icon (adaptive vector: ring + `>_` on #020508) | ✅ Done v1.1.3 — template robot bitmaps removed |
+| Play hi-res icon 512×512 | ✅ `play-store/icon-512.png` (`scripts/make_store_icon.py`) |
+| Launch splash / window background | ✅ #020508 (no more white flash) |
+| Release signing | ⚙️ Wired via gitignored `keystore.properties` — **fill in the two passwords** |
+| Listing copy + Data safety answers | ✅ `docs/PLAY_STORE_LISTING.md` (all fields within Play limits) |
+| Privacy policy | ✅ `docs/privacy-policy.html` — needs GitHub Pages enabled to go live |
+| Play Store screenshots | ⏳ Not taken yet (1080×1920 from the API 36 emulator) |
+| Feature graphic 1024×500 | ⏳ Not made yet |
 
 ---
 
@@ -106,13 +112,12 @@ APK lands at `app\build\outputs\apk\debug\app-debug.apk` (~11.6 MB, debug-signed
 
 ## Before Play Store Submission
 
-1. Design app icon — 512×512 PNG, no alpha, black bg (replace default `ic_launcher`)
-2. Design feature graphic — 1024×500 PNG
-3. Take 4–5 screenshots (home, terminal mode, all apps, theme variants, 1-column large)
-4. Write short description (80 chars) + full description
-5. Set up privacy policy URL (GitHub Pages)
-6. Build signed release AAB — **Build → Generate Signed Bundle**
-7. Upload to Play Console and submit (3–7 day review)
+1. ~~App icon~~ ✅ · ~~512 store icon~~ ✅ · ~~listing copy~~ ✅ · ~~privacy policy page~~ ✅ · ~~signing config~~ ✅
+2. Fill in `storePassword` and `keyPassword` in `keystore.properties` (gitignored; template: `keystore.properties.example`)
+3. Build the signed bundle: `gradlew bundleRelease` (or Android Studio **Build → Build Bundle(s) / APK(s) → Build Bundle(s)**) → `app/build/outputs/bundle/release/app-release.aab`
+4. Enable GitHub Pages (Settings → Pages → `master` / `/docs`) → privacy URL `https://angusm99.github.io/void-phone-launcher/privacy-policy.html`
+5. Capture 4 screenshots (home, icon pack, terminal mode, all apps) at 1080×1920 and make the 1024×500 feature graphic
+6. Play Console: create app → upload to **Closed testing** → 12 testers for 14 days (personal accounts) → then production
 
 > Note (2026-06-04): the GitHub repo now **is** the full buildable Gradle project — clone it and build directly. The old loose-files `VOID_UI_LAUNCHER_MASTER` copies were retired.
 
@@ -127,4 +132,7 @@ APK lands at `app\build\outputs\apk\debug\app-debug.apk` (~11.6 MB, debug-signed
 | `GEMINI_PROJECT_BRIEF.md` | Gemini AI brief |
 | `PROJECT.md` | Original spec |
 | `CODEX.md` | This file |
-| Obsidian: `VOID UI-Phone Launcher App.md` | Full verified status + architecture rules |
+| `docs/PLAY_STORE_LISTING.md` | Play listing copy, console settings, Data safety answers |
+| `docs/privacy-policy.html` | Privacy policy (served by GitHub Pages from `/docs`) |
+| `keystore.properties.example` | Release-signing template (real file is gitignored) |
+| Obsidian: `Projects/Void Phone.md` | Canonical project note (navigation + handoff) |

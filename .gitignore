@@ -16,3 +16,8 @@ local.properties
 
 # Kotlin build cache
 .kotlin
+
+# Release signing — never commit (public repo)
+keystore.properties
+*.jks
+*.keystore
