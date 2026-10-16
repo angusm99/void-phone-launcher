@@ -1,11 +1,13 @@
 package com.clearphone.launcher
 
+import android.content.ComponentName
 import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -266,6 +268,8 @@ class MainActivity : ComponentActivity() {
                     color = NearBlack
                 ) {
                     var currentScreen by remember { mutableStateOf(Screen.Home) }
+                    // System back from All Apps / Help returns home instead of closing the launcher
+                    BackHandler(enabled = currentScreen != Screen.Home) { currentScreen = Screen.Home }
                     val iconFor: (AppItem) -> Drawable = { app ->
                         loadedIconPack.value?.getIcon(app) ?: app.icon
                     }
@@ -390,12 +394,31 @@ class MainActivity : ComponentActivity() {
         CoroutineScope(Dispatchers.IO).launch { store.saveThemeColor(themeColor.value) }
     }
 
+    // A plain Home intent resolves straight back to this app once it is the default home, so
+    // open another installed home app explicitly. Boot-time fallbacks (e.g. Settings' FallbackHome)
+    // declare a negative priority and are skipped.
     private fun returnToSystemLauncher() {
-        val intent = Intent(Intent.ACTION_MAIN).apply {
-            addCategory(Intent.CATEGORY_HOME)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val home = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        val all = packageManager.queryIntentActivities(home, 0)
+        val others = all.filter { it.activityInfo.packageName != packageName && it.priority >= 0 }
+        when {
+            others.isEmpty() -> setAsDefaultLauncher()
+            others.size == 1 -> startActivity(
+                Intent(home)
+                    .setClassName(others[0].activityInfo.packageName, others[0].activityInfo.name)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+            else -> {
+                val excluded = (all - others.toSet())
+                    .map { ComponentName(it.activityInfo.packageName, it.activityInfo.name) }
+                    .toTypedArray()
+                startActivity(
+                    Intent.createChooser(home, "switch launcher")
+                        .putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, excluded)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                )
+            }
         }
-        startActivity(intent)
     }
 
     private fun toggleIcons() {

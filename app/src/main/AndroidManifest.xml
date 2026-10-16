@@ -7,6 +7,11 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
+        <!-- Other home apps, so "return to previous launcher" can find them on Android 11+ -->
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.HOME" />
+        </intent>
         <!-- Icon pack visibility (ADW / GO / Nova theme intents) so installed packs are detectable on Android 11+ -->
         <intent>
             <action android:name="org.adw.launcher.THEMES" />

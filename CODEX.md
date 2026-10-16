@@ -1,10 +1,10 @@
 # VOID UI Phone Launcher — Codex
 
 **Package:** `com.clearphone.launcher`  
-**Version:** `1.1.3` (versionCode 6) — single source of truth in `build.gradle.kts`, read via `BuildConfig`  
+**Version:** `1.1.4` (versionCode 7) — single source of truth in `build.gradle.kts`, read via `BuildConfig`  
 **Stack:** Kotlin + Jetpack Compose, single activity, no Navigation Compose  
-**Build status:** ✅ Debug APK and release AAB build clean (Gradle, JBR 21, build-tools 36) — 2026-10-15. Release signing is wired; it fails at signing until the two passwords are filled in `keystore.properties`  
-**Last updated:** 2026-10-15
+**Build status:** ✅ Debug APK and release AAB build clean (Gradle, JBR 21, build-tools 36) — 2026-10-16. Release signing is wired; it fails at signing until the two passwords are filled in `keystore.properties`  
+**Last updated:** 2026-10-16
 
 ---
 
@@ -96,9 +96,11 @@ APK lands at `app\build\outputs\apk\debug\app-debug.apk` (~11.6 MB, debug-signed
 | Launch splash / window background | ✅ #020508 (no more white flash) |
 | Release signing | ⚙️ Wired via gitignored `keystore.properties` — **fill in the two passwords** |
 | Listing copy + Data safety answers | ✅ `docs/PLAY_STORE_LISTING.md` (all fields within Play limits) |
-| Privacy policy | ✅ `docs/privacy-policy.html` — needs GitHub Pages enabled to go live |
-| Play Store screenshots | ⏳ Not taken yet (1080×1920 from the API 36 emulator) |
-| Feature graphic 1024×500 | ⏳ Not made yet |
+| Privacy policy | ✅ Live: https://angusm99.github.io/void-phone-launcher/privacy-policy.html |
+| Play Store screenshots | ✅ 4 × 1080×1920 in `play-store/` (home, terminal mode, icon pack, all apps) |
+| Feature graphic 1024×500 | ✅ `play-store/feature-1024x500.png` (`scripts/make_feature_graphic.py`) |
+| Back gesture on All Apps / Help | ✅ Fixed v1.1.4 — returns home instead of closing the launcher |
+| ⋮ "return to previous launcher" | ✅ Fixed v1.1.4 — opens another home app explicitly (skips boot FallbackHome) |
 
 ---
 
@@ -112,12 +114,10 @@ APK lands at `app\build\outputs\apk\debug\app-debug.apk` (~11.6 MB, debug-signed
 
 ## Before Play Store Submission
 
-1. ~~App icon~~ ✅ · ~~512 store icon~~ ✅ · ~~listing copy~~ ✅ · ~~privacy policy page~~ ✅ · ~~signing config~~ ✅
+1. ~~App icon~~ ✅ · ~~512 store icon~~ ✅ · ~~feature graphic~~ ✅ · ~~4 screenshots~~ ✅ · ~~listing copy~~ ✅ · ~~privacy policy live~~ ✅ · ~~signing config~~ ✅
 2. Fill in `storePassword` and `keyPassword` in `keystore.properties` (gitignored; template: `keystore.properties.example`)
 3. Build the signed bundle: `gradlew bundleRelease` (or Android Studio **Build → Build Bundle(s) / APK(s) → Build Bundle(s)**) → `app/build/outputs/bundle/release/app-release.aab`
-4. Enable GitHub Pages (Settings → Pages → `master` / `/docs`) → privacy URL `https://angusm99.github.io/void-phone-launcher/privacy-policy.html`
-5. Capture 4 screenshots (home, icon pack, terminal mode, all apps) at 1080×1920 and make the 1024×500 feature graphic
-6. Play Console: create app → upload to **Closed testing** → 12 testers for 14 days (personal accounts) → then production
+4. Play Console: create app → upload to **Closed testing** → 12 testers for 14 days (personal accounts) → then production
 
 > Note (2026-06-04): the GitHub repo now **is** the full buildable Gradle project — clone it and build directly. The old loose-files `VOID_UI_LAUNCHER_MASTER` copies were retired.
 

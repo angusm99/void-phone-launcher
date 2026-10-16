@@ -28,7 +28,9 @@ BG_CENTRE, BG_EDGE = hex_rgb("#0B1526"), hex_rgb("#020508")
 RING, PROMPT = hex_rgb("#3B82F6"), hex_rgb("#60A5FA")
 
 # Background: radial lift from the centre (gradientRadius 60 units, as in the vector)
-mask = Image.radial_gradient("L").resize((round(120 * UNIT),) * 2, Image.BICUBIC)
+# Pillow's gradient only reaches 255 in its corners; rescale so it reaches 255 at the radius
+mask = Image.radial_gradient("L").point(lambda v: min(255, round(v * 1.4142)))
+mask = mask.resize((round(120 * UNIT),) * 2, Image.BICUBIC)
 offset = round(p(54) - 60 * UNIT)
 fade = Image.new("L", (PX, PX), 255)
 fade.paste(mask, (offset, offset))
